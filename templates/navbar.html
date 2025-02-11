@@ -1,0 +1,42 @@
+<a href="/">
+    <h1>LOGO</h1>
+</a>
+
+<form method='GET' action="{% url 'home' %}"> 
+    <input type="text" placeholder="Search Rooms..." name="q" />
+</form>
+<!-- 
+This code snippet is responsible for displaying different navigation options based on the user's authentication status. 
+It performs the following tasks:
+1. Checks if the user is authenticated.
+2. If authenticated, displays a "Logout" link.
+3. If not authenticated, displays a "Login" link.
+
+Parameters:
+- request.user.is_authenticated: A boolean indicating whether the user is authenticated.
+
+Returns:
+- Renders the appropriate navigation link based on the user's authentication status.
+
+Example usage:
+{% if request.user.is_authenticated %}
+    <a href="">Logout</a>
+{% else %}
+    <a href="{% url 'login' %}">Login</a>
+{% endif %}
+
+Note:
+- Ensure that the 'request' context is available in the template.
+
+Author:
+- GitHub Copilot
+
+Date:
+- [Date of creation or last modification]
+-->
+{% if request.user.is_authenticated %}
+<a href="{% url 'logout' %}">Logout</a>
+{% else %}
+<a href="{% url 'login' %}">Login</a>
+{% endif %}
+<hr>
