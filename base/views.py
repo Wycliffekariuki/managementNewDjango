@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
 from django.db.models import Q
-from .models import Room, Topic, User
+from .models import Room, Topic, User, Message
 from .forms import RoomForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.contrib.auth.forms import UserCreationForm
 # Create your views here.
 
 # rooms = [
@@ -15,8 +16,13 @@ from django.http import HttpResponse
 # ]
 
 def loginPage(request):
+    page = 'login'
+
+    if request.user.is_authenticated:
+        return redirect('home')
+    
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = request.POST.get('username').lower()
         password = request.POST.get('password')
 
         try:
@@ -34,13 +40,31 @@ def loginPage(request):
 
         else:
             messages.error(request, 'Username password is incorrect')
-    context = {}
+    context = {'page': page}
     return render(request, 'base/login_register.html', context)
 
 
 def logoutUser(request):
     logout(request)
     return redirect('home')
+
+def registerUser(request):
+    # page = 'register'
+    form = UserCreationForm()
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit = False)
+            user.username = user.username.lower()
+            user.save()
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request, 'An error has occured during registration')
+
+    context = {'form': form}    
+    return render(request, 'base/login_register.html', context)
 
 
 def home(request):
@@ -58,8 +82,18 @@ def home(request):
 
 def room(request, pk):
     room = Room.objects.get(id = pk)
-    context = {'room': room}
+    room_messages = room.message_set.all().order_by('-created')  #We can query the child objects of a specific room
+
+    if request.method == 'POST':
+        message = message.objects.create(
+            user = request.user,
+            room = room,
+            body= request.POST.get('body')
+        )
+        return redirect('room', pk = room.id)
+    context = {'room': room, 'room_messages': room_messages}
     return render(request, 'base/room.html', context)
+
 
 @login_required(login_url='login')
 def createRoom(request):
@@ -92,4 +126,8 @@ def updateRoom(request, pk):
 @login_required(login_url='login')
 def deleteRoom(request, pk):
       room = Room.objects.get(id = pk)
+
+      if request.user != room.host:
+          return HttpResponse('You are not allowed here!!')
+      
       return render(request, 'base/delete.html', {'obj': room})
